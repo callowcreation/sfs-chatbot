@@ -68,7 +68,7 @@ async function onMessage(channel, user, message, self) {
 
             if (activePanel && activePanel.active === true) {
 
-                const username = chatInterface.getUsername(term, msg);
+                const username = getUsername(term, msg);
 
                 const twitchUsers = await twitchRequest.getUserByName(username);
 
@@ -90,6 +90,5 @@ async function onMessage(channel, user, message, self) {
 
 module.exports = {
     connect: () => client.connect(),
-    getUsername,
     joinChannel: joinChannelById
 };
