@@ -37,7 +37,7 @@ if (module === require.main) {
     });
 
     app.post('/join', async (req, res) => {
-        if(verifyAuthorization(req)) {
+        if (verifyAuthorization(req)) {
             await chatInterface.joinChannel(req.body.channelId);
             res.end();
         } else {
@@ -58,7 +58,9 @@ if (module === require.main) {
             const { success } = await twitchRequest.authorize(code, state);
             if (success === true) {
                 console.log('authenticated');
-                res.redirect('/home');
+
+                const data = await dbRequest.getChannels().then(r => r.json());
+                console.log(' --------------- GET USERS ------------------ ', data);
 
                 const { ids } = await dbRequest.getChannels().then(r => r.json());
 
@@ -66,6 +68,7 @@ if (module === require.main) {
                     joinQueue.items.enqueue(ids[i]);
                     join()
                 }
+                res.redirect('/home');
             } else {
                 res.redirect('/failed');
             }
