@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const qs = require('querystring');
 
@@ -30,26 +31,6 @@ const joinQueue = {
     isBusy: false
 };
 
-const serviceAccount = {
-    "type": process.env.SERVICE_ACCOUNT_TYPE,
-    "project_id": process.env.SERVICE_ACCOUNT_PROJECT_ID,
-    "private_key_id": process.env.SERVICE_ACCOUNT_PRIVATE_KEY_ID,
-    "private_key": process.env.SERVICE_ACCOUNT_PRIVATE_KEY,
-    "client_email": process.env.SERVICE_ACCOUNT_CLIENT_EMAIL,
-    "client_id": process.env.SERVICE_ACCOUNT_CLIENT_ID,
-    "auth_uri": process.env.SERVICE_ACCOUNT_AUTH_URI,
-    "token_uri": process.env.SERVICE_ACCOUNT_TOKEN_URI,
-    "auth_provider_x509_cert_url": process.env.SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL,
-    "client_x509_cert_url": process.env.SERVICE_ACCOUNT_CLIENT_X509_CERT_URL
-};
-
-const MAX_CHANNEL_SHOUTOUTS = 4;
-
-const firebaseApp = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://shoutouts-for-streamers.firebaseio.com"
-});
-
 const client = new tmi.client({
     connection: {
         cluster: "aws",
@@ -66,6 +47,8 @@ client.on('message', onMessage);
 
 if (module === require.main) {
     client.connect();
+
+    app.use(bodyParser.json());
 
     app.get('/', (req, res) => {
         res.status(200).send(`<a href="/authorize">Authorize</a>`);
@@ -90,20 +73,17 @@ if (module === require.main) {
         const state = req_data['state'];
 
         if (twitchOAuth.confirmState(state)) {
-            twitchOAuth.fetchToken(code).then(json => {
+            twitchOAuth.fetchToken(code).then(async json => {
                 if (json.success === true) {
                     console.log('authenticated');
                     res.redirect('/home');
 
-                    const rootRef = firebaseApp.database().ref('/');
+                    const { ids } = await getFirebaseRequest('channels/ids').then(r => r.json());
 
-                    rootRef.on('child_added', async snapshot => {
-                        joinQueue.items.enqueue(snapshot.key);
-                        join();
-                    });
-                    rootRef.on('child_removed', async snapshot => {
-                        await partChannelDataById(snapshot.key);
-                    });
+                    for (let i = 0; i < ids.length; i++) {
+                        joinQueue.items.enqueue(ids[i]);
+                        join()
+                    }
 
                 } else {
                     res.redirect('/failed');
@@ -115,7 +95,7 @@ if (module === require.main) {
 
     });
 
-    const server = app.listen(process.env.PORT || 7000, () => {
+    const server = app.listen(process.env.PORT || 5000, () => {
         const port = server.address().port;
         console.log(`App listening on port ${port}`);
 
@@ -136,7 +116,8 @@ async function onMessage(channel, user, message, self) {
         try {
 
             const url = `https://api.twitch.tv/helix/users/extensions?user_id=${user['room-id']}`;
-            const { data } = await twitchOAuth.getEndpoint(url);
+            const { data } = await twitchOAuth.getEndpoint(url)
+                .catch(e => console.error(e));
 
             let activePanel = null;
 
@@ -151,45 +132,56 @@ async function onMessage(channel, user, message, self) {
 
                 const username = getUsername(term, msg);
 
-                const ref = firebaseApp.database().ref(`${user['room-id']}/shoutouts`);
-                const snap = await ref.once('value');
-                const values = snap.val();
-                for (const channel_id in values) {
-                    if (values[channel_id].toLowerCase() === username) {
-                        await ref.child(channel_id).remove();
-                        console.log(`${channel} : Removed Dup : ${username}`);
-                    }
-                }
+                const twitchUsers = await twitchOAuth.getEndpoint(`https://api.twitch.tv/helix/users?login=${username}`)
+                    .catch(e => console.error(e));
 
-                await ref.push(username);
-                console.log(`${channel} : Added : ${username}`);
+                if (twitchUsers.data.length === 1) {
 
-                const snapshot = await ref.once('value');
-                const numChildren = snapshot.numChildren();
-                if (numChildren > MAX_CHANNEL_SHOUTOUTS) {
-                    const firstsnap = await ref.limitToFirst(1).once('value');
-                    firstsnap.forEach(async csnap => {
-                        const uname = csnap.val();
-                        await ref.child(csnap.key).remove();
-                        console.log(`${channel} : Removed Max : ${uname}`);
+                    const result_add = await postFirebaseRequest('channels/shoutouts/add', {
+                        channelId: user['room-id'],
+                        username
                     });
+
+                    console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
                 }
 
-                const update = await fetch('https://shoutouts-for-streamers.firebaseapp.com/channels/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ channelId: user['room-id'] })
-                });
-                console.log(`${channel} : Update Status ${update.status}`);
             } else {
-                const ref = firebaseApp.database().ref(`${user['room-id']}`);
-                await ref.remove();
-                console.log(`${channel} : Not Active`);
+                const result_remove = await postFirebaseRequest('channels/remove', {
+                    channelId: user['room-id']
+                });
+                await partChannelDataById(user['room-id']);
+                console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
             }
         } catch (error) {
             console.log(error);
         }
     }
+}
+
+function getBaseUrl() {
+    //return 'http://localhost:5000';
+    return 'https://shoutouts-for-streamers.firebaseapp.com';
+}
+
+function getFirebaseRequest(path) {
+    return fetch(`${getBaseUrl()}/${path}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + (Buffer.from(process.env.EXT_CLIENT_ID + ':' + process.env.EXT_CLIENT_SECRET).toString('base64'))
+        }
+    });
+}
+
+function postFirebaseRequest(path, data) {
+    return fetch(`${getBaseUrl()}/${path}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + (Buffer.from(process.env.EXT_CLIENT_ID + ':' + process.env.EXT_CLIENT_SECRET).toString('base64'))
+        },
+        body: JSON.stringify(data)
+    });
 }
 
 function getUsername(term, msg) {
@@ -220,8 +212,7 @@ async function join() {
     if (activePanel && activePanel.active === true) {
         await joinChannelDataById(channel_id);
     } else {
-        const ref = firebaseApp.database().ref(`${channel_id}`);
-        await ref.remove();
+        await postFirebaseRequest('channels/remove', { channelId: channel_id }).catch(e => console.error(e));
     }
 
     await new Promise(resolve => setTimeout(resolve, delayMs));
