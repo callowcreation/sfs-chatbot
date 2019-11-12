@@ -28,7 +28,7 @@ if (module === require.main) {
     });
 
     app.get('/test', (req, res) => {
-        twitchRequest.getUserExtensions(user_id).then(json => res.status(200).json(json))
+        twitchRequest.getUserExtensions('75987197').then(json => res.status(200).json(json))
             .catch(e => console.error(e));
     });
 
