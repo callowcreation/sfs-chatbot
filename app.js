@@ -45,6 +45,16 @@ if (module === require.main) {
         }
     });
 
+    app.post('/ping', async (req, res) => {
+        if (verifyAuthorization(req)) {
+            twitchRequest.getUserExtensions('75987197').then(json => {
+                res.status(200).json(json);
+            }).catch(e => console.error(e));
+        } else {
+            res.status(404).end();
+        }
+    });
+
     app.get('/authorize', (req, res) => {
         res.redirect(twitchRequest.authorizeUrl);
     });
