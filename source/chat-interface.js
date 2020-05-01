@@ -86,7 +86,7 @@ async function onMessage(channel, user, message, self) {
 			if (activePanel && activePanel.active === true) {
 				const result_add = await dbRequest.addShoutout(user['room-id'], username);
 				console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
-			} else {
+			} else if(data) {
 				const result_remove = await dbRequest.removeChannel(user['room-id']);
 				await partChannelById(user['room-id']);
 				console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
