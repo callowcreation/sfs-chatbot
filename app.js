@@ -118,14 +118,13 @@ async function join() {
 				activePanel = panel;
 			}
 		}
+		if (activePanel && activePanel.active === true) {
+			await chatInterface.joinChannel(channel_id);
+		} else {
+			await dbRequest.removeChannel(channel_id);
+		}
 	} else {
 		console.error(response);
-	}
-
-	if (activePanel && activePanel.active === true) {
-		await chatInterface.joinChannel(channel_id);
-	} else {
-		await dbRequest.removeChannel(channel_id);
 	}
 
 	await new Promise(resolve => setTimeout(resolve, delayMs));
