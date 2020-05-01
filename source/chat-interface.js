@@ -4,91 +4,100 @@ const tmi = require('tmi.js');
 const dbRequest = require('./db-request');
 const twitchRequest = require('./twitch-request');
 
+const shoutouts = {};
+
+const WAIT_ON_FAILED_JOIN_MS = 1000 * 10;
+
 const client = new tmi.client({
-    connection: {
-        cluster: "aws",
-        reconnect: true
-    },
-    identity: {
-        username: process.env.BOT_USERNAME,
-        password: process.env.OAUTH_TOKEN
-    },
-    channels: []
+	connection: {
+		cluster: "aws",
+		reconnect: true
+	},
+	identity: {
+		username: process.env.BOT_USERNAME,
+		password: process.env.OAUTH_TOKEN
+	},
+	channels: []
 });
 
 client.on('message', onMessage);
 
 function getUsername(term, msg) {
-    const username = msg.substr(term.length).replace(/@/g, '').toLowerCase();
-    const lastIndex = username.lastIndexOf('/') + 1;
-    return username.substr(lastIndex);
+	const username = msg.substr(term.length).replace(/@/g, '').toLowerCase();
+	const lastIndex = username.lastIndexOf('/') + 1;
+	return username.substr(lastIndex);
 }
 
 async function joinChannelById(channel_id) {
-    try {
-        const user = await twitchRequest.getUserById(channel_id);
-        const joined = await client.join(user.name);
-        console.log(`Join channel ${channel_id} ${user.display_name} ${joined[0]}`);
-    } catch (error) {
-        console.log(`FAILED Join channel ${channel_id}`);
-        console.error(error);
-    }
+	try {
+		const user = await twitchRequest.getUserById(channel_id);
+		const joined = await client.join(user.name);
+		console.log(`Join channel ${channel_id} ${user.display_name} ${joined[0]}`);
+	} catch (error) {
+		console.log(`FAILED Join channel ${channel_id}`);
+		console.error(error);
+
+		await new Promise(resolve => setTimeout(resolve, WAIT_ON_FAILED_JOIN_MS));
+	}
 }
 
 async function partChannelById(channel_id) {
-    try {
-        const user = await twitchRequest.getUserById(channel_id);
-        const parted = await client.part(user.name);
-        console.log(`Part channel ${channel_id} ${user.display_name} ${parted[0]}`);
-    } catch (error) {
-        console.log(`FAILED Part channel ${channel_id}`);
-        console.error(error);
-    }
+	try {
+		const user = await twitchRequest.getUserById(channel_id);
+		const parted = await client.part(user.name);
+		console.log(`Part channel ${channel_id} ${user.display_name} ${parted[0]}`);
+	} catch (error) {
+		console.log(`FAILED Part channel ${channel_id}`);
+		console.error(error);
+	}
 }
 
 async function onMessage(channel, user, message, self) {
-    if (self) return;
-    if (channel.replace(/#/g, '') !== user.username && user.mod === false) return;
 
-    const msg = message.trim();
+	if (self) return;
+	if (channel.replace(/#/g, '') !== user.username && user.mod === false) return;
 
-    const term = '!so ';
-    if (msg.indexOf(term) === 0) {
-        try {
-            const { data } = await twitchRequest.getUserExtensions(user['room-id']);
+	const msg = message.trim();
 
-            let activePanel = null;
+	const term = '!so ';
+	if (msg.indexOf(term) === 0) {
 
-            for (const panelId in data.panel) {
-                const panel = data.panel[panelId];
-                if (panel.name === 'Shoutouts for Streamers') {
-                    activePanel = panel;
-                }
-            }
+		const username = getUsername(term, msg);
 
-            if (activePanel && activePanel.active === true) {
+		if (shoutouts[channel] === username) return;
+		shoutouts[channel] = username;
 
-                const username = getUsername(term, msg);
+		try {
 
-                const twitchUsers = await twitchRequest.getUserByName(username);
+			const twitchUsers = await twitchRequest.getUserByName(username);
+			if (twitchUsers.data.length === 0) return;
 
-                if (twitchUsers.data.length === 1) {
-                    const result_add = await dbRequest.addShoutout(user['room-id'], username);
-                    console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
-                }
+			const { data } = await twitchRequest.getUserExtensions(user['room-id']);
 
-            } else {
-                const result_remove = await dbRequest.removeChannel(user['room-id']);
-                await partChannelById(user['room-id']);
-                console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    }
+			let activePanel = null;
+
+			for (const panelId in data.panel) {
+				const panel = data.panel[panelId];
+				if (panel.name === 'Shoutouts for Streamers') {
+					activePanel = panel;
+				}
+			}
+
+			if (activePanel && activePanel.active === true) {
+				const result_add = await dbRequest.addShoutout(user['room-id'], username);
+				console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
+			} else {
+				const result_remove = await dbRequest.removeChannel(user['room-id']);
+				await partChannelById(user['room-id']);
+				console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	}
 }
 
 module.exports = {
-    connect: () => client.connect(),
-    joinChannel: joinChannelById
+	connect: () => client.connect(),
+	joinChannel: joinChannelById
 };
