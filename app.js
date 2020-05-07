@@ -11,6 +11,8 @@ const chatInterface = require('./source/chat-interface');
 const dbRequest = require('./source/db-request');
 const twitchRequest = require('./source/twitch-request');
 
+const OWNER_ID = '75987197';
+
 const delayMs = 150;
 const joinQueue = {
 	items: new Queue(),
@@ -28,7 +30,7 @@ if (module === require.main) {
 	});
 
 	app.get('/test', (req, res) => {
-		twitchRequest.getUserExtensions('75987197').then(json => res.status(200).json(json))
+		twitchRequest.getUserExtensions(OWNER_ID).then(json => res.status(200).json(json))
 			.catch(e => console.error(e));
 	});
 
@@ -47,7 +49,7 @@ if (module === require.main) {
 
 	app.post('/ping', async (req, res) => {
 		if (verifyAuthorization(req)) {
-			twitchRequest.getUserExtensions('75987197').then(json => {
+			twitchRequest.getUserExtensions(OWNER_ID).then(json => {
 				res.status(200).json(json);
 			}).catch(e => console.error(e));
 		} else {
@@ -68,15 +70,22 @@ if (module === require.main) {
 			const auth = await twitchRequest.authorize(code, state);
 			if (auth.success === true) {
 				console.log('authenticated');
-
+				
 				const { ids } = await dbRequest.getChannels().then(r => r.json());
-				//const ids = ['75987197'];
+				//const ids = [];
+				//ids.length = 50;
+				//ids.fill(OWNER_ID);
 
 				for (let i = 0; i < ids.length; i++) {
 					joinQueue.items.enqueue(ids[i]);
 					if (i === 0) join();
 				}
 				join();
+
+				/*const result = await twitchRequest.getModeratorEvents(OWNER_ID);
+				console.log(result);*/
+				
+
 				res.redirect('/home');
 			} else {
 				res.redirect('/failed');
@@ -118,11 +127,13 @@ async function join() {
 				activePanel = panel;
 			}
 		}
+
 		if (activePanel && activePanel.active === true) {
 			await chatInterface.joinChannel(channel_id);
 		} else {
 			await dbRequest.removeChannel(channel_id);
 		}
+
 	} else {
 		console.error(response);
 	}

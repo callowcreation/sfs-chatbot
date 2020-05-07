@@ -8,6 +8,14 @@ const shoutouts = {};
 
 const WAIT_ON_FAILED_JOIN_MS = 1000 * 10;
 
+const SPAM_USER_SHOUTOUT_TIME_MS = 1000 * 60;
+
+const MAX_RETRIES = 20;
+
+let retriesCounter = 0;
+let multiplier = 2.0;
+let currentFailedMS = WAIT_ON_FAILED_JOIN_MS;
+
 const client = new tmi.client({
 	connection: {
 		cluster: "aws",
@@ -29,6 +37,10 @@ function getUsername(term, msg) {
 }
 
 async function joinChannelById(channel_id) {
+	if(retriesCounter >= MAX_RETRIES) {
+		console.log(`MAX_RETRIES ${channel_id}`);
+		return;
+	}
 	try {
 		const user = await twitchRequest.getUserById(channel_id);
 		const joined = await client.join(user.name);
@@ -38,6 +50,8 @@ async function joinChannelById(channel_id) {
 		console.error(error);
 
 		await new Promise(resolve => setTimeout(resolve, WAIT_ON_FAILED_JOIN_MS));
+		++retriesCounter;
+		currentFailedMS += currentFailedMS * multiplier;
 	}
 }
 
@@ -64,8 +78,15 @@ async function onMessage(channel, user, message, self) {
 
 		const username = getUsername(term, msg);
 
-		if (shoutouts[channel] === username) return;
-		shoutouts[channel] = username;
+		// validate user sending !so command
+		// is mod or is vip from reading the settings
+		// dbRequest.postSettings(user['room-id'])
+
+		if (shoutouts[channel] &&
+			(shoutouts[channel].username === username &&
+				shoutouts[channel].timestamp > Date.now())) return;
+
+		shoutouts[channel] = { username, timestamp: Date.now() + SPAM_USER_SHOUTOUT_TIME_MS };
 
 		try {
 
@@ -74,23 +95,26 @@ async function onMessage(channel, user, message, self) {
 
 			const { data } = await twitchRequest.getUserExtensions(user['room-id']);
 
-			let activePanel = null;
+			if (data) {
+				let activePanel = null;
 
-			for (const panelId in data.panel) {
-				const panel = data.panel[panelId];
-				if (panel.name === 'Shoutouts for Streamers') {
-					activePanel = panel;
+				for (const panelId in data.panel) {
+					const panel = data.panel[panelId];
+					if (panel.name === 'Shoutouts for Streamers') {
+						activePanel = panel;
+					}
+				}
+
+				if (activePanel && activePanel.active === true) {
+					const result_add = await dbRequest.addShoutout(user['room-id'], username);
+					console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
+				} else {
+					const result_remove = await dbRequest.removeChannel(user['room-id']);
+					await partChannelById(user['room-id']);
+					console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
 				}
 			}
 
-			if (activePanel && activePanel.active === true) {
-				const result_add = await dbRequest.addShoutout(user['room-id'], username);
-				console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
-			} else if(data) {
-				const result_remove = await dbRequest.removeChannel(user['room-id']);
-				await partChannelById(user['room-id']);
-				console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
-			}
 		} catch (error) {
 			console.log(error);
 		}
