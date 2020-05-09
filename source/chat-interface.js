@@ -37,7 +37,7 @@ function getUsername(term, msg) {
 }
 
 async function joinChannelById(channel_id) {
-	if(retriesCounter >= MAX_RETRIES) {
+	if (retriesCounter >= MAX_RETRIES) {
 		console.log(`MAX_RETRIES ${channel_id}`);
 		return;
 	}
@@ -73,7 +73,10 @@ async function onMessage(channel, user, message, self) {
 
 	const msg = message.trim();
 
-	const term = '!so ';
+	const term = process.env.IS_DEV_ENV
+		? '!sotest '
+		: '!so ';
+		
 	if (msg.indexOf(term) === 0) {
 
 		const username = getUsername(term, msg);

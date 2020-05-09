@@ -72,9 +72,9 @@ if (module === require.main) {
 				console.log('authenticated');
 				
 				const { ids } = await dbRequest.getChannels().then(r => r.json());
-				//const ids = [];
-				//ids.length = 50;
-				//ids.fill(OWNER_ID);
+				/*const ids = [];
+				ids.length = 1;
+				ids.fill(OWNER_ID);*/
 
 				for (let i = 0; i < ids.length; i++) {
 					joinQueue.items.enqueue(ids[i]);
@@ -95,7 +95,11 @@ if (module === require.main) {
 			res.redirect('/failed');
 		}
 	});
-
+	if(process.env.IS_DEV_ENV) {
+		console.log('Playground with caution DEV ENV');
+	} else {
+		console.log('No Joke PROD CAUTION ENV');
+	}
 	const server = app.listen(process.env.PORT || 7000, () => {
 		const port = server.address().port;
 		console.log(`App listening on port ${port}`);
