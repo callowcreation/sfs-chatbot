@@ -76,7 +76,7 @@ async function onMessage(channel, user, message, self) {
 	const term = process.env.IS_DEV_ENV
 		? '!sotest '
 		: '!so ';
-		
+
 	if (msg.indexOf(term) === 0) {
 
 		const username = getUsername(term, msg);
@@ -85,37 +85,39 @@ async function onMessage(channel, user, message, self) {
 		// is mod or is vip from reading the settings
 		// dbRequest.postSettings(user['room-id'])
 
-		if (shoutouts[channel] &&
-			(shoutouts[channel].username === username &&
-				shoutouts[channel].timestamp > Date.now())) return;
-
-		shoutouts[channel] = { username, timestamp: Date.now() + SPAM_USER_SHOUTOUT_TIME_MS };
-
 		try {
+
+			const isAllowed = await twitchRequest.isAllowedUser(user['room-id'], user['user-id']);
+			if (!isAllowed) return;
+
+			if (shoutouts[channel] &&
+				(shoutouts[channel].username === username &&
+					shoutouts[channel].timestamp > Date.now())) return;
+
+			shoutouts[channel] = { username, timestamp: Date.now() + SPAM_USER_SHOUTOUT_TIME_MS };
 
 			const twitchUsers = await twitchRequest.getUserByName(username);
 			if (twitchUsers.data.length === 0) return;
 
 			const { data } = await twitchRequest.getUserExtensions(user['room-id']);
+			if (!data) return;
 
-			if (data) {
-				let activePanel = null;
+			let activePanel = null;
 
-				for (const panelId in data.panel) {
-					const panel = data.panel[panelId];
-					if (panel.name === 'Shoutouts for Streamers') {
-						activePanel = panel;
-					}
+			for (const panelId in data.panel) {
+				const panel = data.panel[panelId];
+				if (panel.name === 'Shoutouts for Streamers') {
+					activePanel = panel;
 				}
+			}
 
-				if (activePanel && activePanel.active === true) {
-					const result_add = await dbRequest.addShoutout(user['room-id'], username);
-					console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
-				} else {
-					const result_remove = await dbRequest.removeChannel(user['room-id']);
-					await partChannelById(user['room-id']);
-					console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
-				}
+			if (activePanel && activePanel.active === true) {
+				const result_add = await dbRequest.addShoutout(user['room-id'], { username, posted_by: user.username });
+				console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
+			} else {
+				const result_remove = await dbRequest.removeChannel(user['room-id']);
+				await partChannelById(user['room-id']);
+				console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
 			}
 
 		} catch (error) {

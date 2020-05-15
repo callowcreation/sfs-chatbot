@@ -70,22 +70,30 @@ if (module === require.main) {
 			const auth = await twitchRequest.authorize(code, state);
 			if (auth.success === true) {
 				console.log('authenticated');
-				
-				const { ids } = await dbRequest.getChannels().then(r => r.json());
-				/*const ids = [];
-				ids.length = 1;
-				ids.fill(OWNER_ID);*/
+
+				let ids = [];
+
+				if (process.env.IS_DEV_ENV) {
+					ids.length = 1;
+					ids.fill(OWNER_ID);
+				} else {
+					const json = await dbRequest.getChannels().then(r => r.json());
+					ids = json.ids;
+				}
 
 				for (let i = 0; i < ids.length; i++) {
 					joinQueue.items.enqueue(ids[i]);
 					if (i === 0) join();
 				}
 				join();
+				/*
+				const naivebot = await twitchRequest.isAllowedUser(OWNER_ID, '120614707');
+				const callowcreation = await twitchRequest.isAllowedUser(OWNER_ID, '75987197');
+				const wollac = await twitchRequest.isAllowedUser(OWNER_ID, '101223367');
+				const emmbex = await twitchRequest.isAllowedUser(OWNER_ID, '124652738');
 
-				/*const result = await twitchRequest.getModeratorEvents(OWNER_ID);
-				console.log(result);*/
-				
-
+				console.log({ naivebot, emmbex, callowcreation, wollac });
+				*/
 				res.redirect('/home');
 			} else {
 				res.redirect('/failed');
@@ -95,7 +103,7 @@ if (module === require.main) {
 			res.redirect('/failed');
 		}
 	});
-	if(process.env.IS_DEV_ENV) {
+	if (process.env.IS_DEV_ENV) {
 		console.log('Playground with caution DEV ENV');
 	} else {
 		console.log('No Joke PROD CAUTION ENV');
