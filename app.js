@@ -13,7 +13,7 @@ const twitchRequest = require('./source/twitch-request');
 
 const OWNER_ID = '75987197';
 
-const delayMs = 50;
+const delayMs = 150;
 const joinQueue = {
 	items: new Queue(),
 	isBusy: false
@@ -24,6 +24,7 @@ app.use(bodyParser.json());
 
 if (module === require.main) {
 	chatInterface.connect();
+	chatInterface.listen();
 
 	app.get('/', (req, res) => {
 		res.status(200).send(`<a href="/authorize">Authorize</a>`);

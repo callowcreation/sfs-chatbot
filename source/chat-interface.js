@@ -17,9 +17,10 @@ let multiplier = 2.0;
 let currentFailedMS = WAIT_ON_FAILED_JOIN_MS;
 
 const client = new tmi.client({
+	options: { debug: true },
 	connection: {
-		cluster: "aws",
-		reconnect: true
+		reconnect: true,
+		secure: true
 	},
 	identity: {
 		username: process.env.BOT_USERNAME,
@@ -27,8 +28,6 @@ const client = new tmi.client({
 	},
 	channels: []
 });
-
-client.on('message', onMessage);
 
 function getUsername(term, msg) {
 	const username = msg.substr(term.length).replace(/@/g, '').toLowerCase();
@@ -132,5 +131,6 @@ async function onMessage(channel, user, message, self) {
 
 module.exports = {
 	connect: () => client.connect(),
+	listen: () => client.on('message', onMessage),
 	joinChannel: joinChannelById
 };
