@@ -80,7 +80,6 @@ async function onMessage(channel, user, message, self) {
 		? '!sotest '
 		: '!so ';
 
-	console.log('term (so/sotest) ' + term);
 	if (msg.indexOf(term) === 0) {
 
 		const username = getUsername(term, msg);
