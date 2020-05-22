@@ -40,6 +40,7 @@ async function joinChannelById(channel_id) {
 	if (retriesCounter >= MAX_RETRIES) {
 		console.log(`MAX_RETRIES ${retriesCounter} of ${MAX_RETRIES} for channel ${channel_id}`);
 		retriesCounter = 0;
+		currentFailedMS = WAIT_ON_FAILED_JOIN_MS;
 		return -1;
 	}
 	try {
