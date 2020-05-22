@@ -13,7 +13,7 @@ const twitchRequest = require('./source/twitch-request');
 
 const OWNER_ID = '75987197';
 
-const delayMs = 150;
+const delayMs = 50;
 const joinQueue = {
 	items: new Queue(),
 	isBusy: false
