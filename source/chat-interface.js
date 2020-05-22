@@ -10,7 +10,7 @@ const WAIT_ON_FAILED_JOIN_MS = 1000 * 10;
 
 const SPAM_USER_SHOUTOUT_TIME_MS = 1000 * 60;
 
-const MAX_RETRIES = 20;
+const MAX_RETRIES = 5;
 
 let retriesCounter = 0;
 let multiplier = 2.0;
@@ -39,6 +39,7 @@ function getUsername(term, msg) {
 async function joinChannelById(channel_id) {
 	if (retriesCounter >= MAX_RETRIES) {
 		console.log(`MAX_RETRIES ${retriesCounter} of ${MAX_RETRIES} for channel ${channel_id}`);
+		retriesCounter = 0;
 		return -1;
 	}
 	try {

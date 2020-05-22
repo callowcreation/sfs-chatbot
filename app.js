@@ -142,8 +142,6 @@ async function join() {
 
 		if (activePanel && activePanel.active === true) {
 			joinResult = await chatInterface.joinChannel(channel_id);
-		} else {
-			await dbRequest.removeChannel(channel_id);
 		}
 
 	} else {
@@ -151,6 +149,9 @@ async function join() {
 	}
 
 	await new Promise(resolve => setTimeout(resolve, delayMs));
+	if(joinResult === -1) {
+		await dbRequest.removeChannel(channel_id);
+	}
 	if(joinResult === 1 || joinResult === -1) {
 		joinQueue.items.dequeue();
 	}
