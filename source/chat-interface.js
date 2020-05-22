@@ -72,7 +72,7 @@ async function partChannelById(channel_id) {
 async function onMessage(channel, user, message, self) {
 
 	if (self) return;
-	if (channel.replace(/#/g, '') !== user.username && user.mod === false) return;
+	//if (channel.replace(/#/g, '') !== user.username && user.mod === false) return;
 
 	const msg = message.trim();
 
@@ -80,6 +80,7 @@ async function onMessage(channel, user, message, self) {
 		? '!sotest '
 		: '!so ';
 
+	console.log('term (so/sotest) ' + trem);
 	if (msg.indexOf(term) === 0) {
 
 		const username = getUsername(term, msg);
