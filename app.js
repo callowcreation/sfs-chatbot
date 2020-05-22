@@ -12,6 +12,7 @@ const dbRequest = require('./source/db-request');
 const twitchRequest = require('./source/twitch-request');
 
 const OWNER_ID = '75987197';
+const CHANNEL_ID = OWNER_ID ;//'101223367' // <--- 101223367 is woLLac;
 
 const delayMs = 150;
 const joinQueue = {
@@ -31,7 +32,7 @@ if (module === require.main) {
 	});
 
 	app.get('/test', (req, res) => {
-		twitchRequest.getUserExtensions(OWNER_ID).then(json => res.status(200).json(json))
+		twitchRequest.getUserExtensions(CHANNEL_ID).then(json => res.status(200).json(json))
 			.catch(e => console.error(e));
 	});
 
@@ -78,7 +79,7 @@ if (module === require.main) {
 
 				if (process.env.IS_DEV_ENV) {
 					ids.length = 1;
-					ids.fill(OWNER_ID);
+					ids.fill(CHANNEL_ID);
 				} else {
 					const json = await dbRequest.getChannels().then(r => r.json());
 					ids = json.ids;
@@ -89,14 +90,7 @@ if (module === require.main) {
 					if (i === 0) join();
 				}
 				join();
-				/*
-				const naivebot = await twitchRequest.isAllowedUser(OWNER_ID, '120614707');
-				const callowcreation = await twitchRequest.isAllowedUser(OWNER_ID, '75987197');
-				const wollac = await twitchRequest.isAllowedUser(OWNER_ID, '101223367');
-				const emmbex = await twitchRequest.isAllowedUser(OWNER_ID, '124652738');
 
-				console.log({ naivebot, emmbex, callowcreation, wollac });
-				*/
 				res.redirect('/home');
 			} else {
 				res.redirect('/failed');

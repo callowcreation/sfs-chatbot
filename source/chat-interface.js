@@ -72,7 +72,7 @@ async function partChannelById(channel_id) {
 async function onMessage(channel, user, message, self) {
 
 	if (self) return;
-	//if (channel.replace(/#/g, '') !== user.username && user.mod === false) return;
+	if (channel.replace(/#/g, '') !== user.username && user.mod === false) return;
 
 	const msg = message.trim();
 
@@ -90,11 +90,15 @@ async function onMessage(channel, user, message, self) {
 		// dbRequest.postSettings(user['room-id'])
 
 		try {
+			/*
+			// Forbidden for woLLac 
+			// I think it is because this is caLLowCreation app and 
+			// can't access this endpoint like subscribers
 
 			const isAllowed = await twitchRequest.isAllowedUser(user['room-id'], user['user-id']);
 			console.log('isAllowed ' + isAllowed);
-
 			if (!isAllowed) return;
+			*/
 
 			if (shoutouts[channel] &&
 				(shoutouts[channel].username === username &&
