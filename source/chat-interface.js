@@ -39,20 +39,21 @@ function getUsername(term, msg) {
 async function joinChannelById(channel_id) {
 	if (retriesCounter >= MAX_RETRIES) {
 		console.log(`MAX_RETRIES ${retriesCounter} of ${MAX_RETRIES} for channel ${channel_id}`);
-		return;
+		return -1;
 	}
 	try {
 		const user = await twitchRequest.getUserById(channel_id);
 		const joined = await client.join(user.name);
 		console.log(`Join ${retriesCounter} of ${MAX_RETRIES} retries for channel ${channel_id} ${user.display_name} ${joined[0]}`);
-		retriesCounter = 0;
+		return 1;
 	} catch (error) {
-		console.log(`FAILED Join channel ${channel_id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
+		console.log(`FAILED ${currentFailedMS/1000}s Join channel ${channel_id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
 		console.error(error);
 
 		await new Promise(resolve => setTimeout(resolve, WAIT_ON_FAILED_JOIN_MS));
 		++retriesCounter;
 		currentFailedMS += currentFailedMS * multiplier;
+		return -2;
 	}
 }
 

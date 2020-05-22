@@ -131,7 +131,7 @@ async function join() {
 	const response = await twitchRequest.getUserExtensions(channel_id);
 
 	let activePanel = null;
-
+	let joinResult = 0;
 	if (response.data) {
 		for (const panelId in response.data.panel) {
 			const panel = response.data.panel[panelId];
@@ -141,7 +141,7 @@ async function join() {
 		}
 
 		if (activePanel && activePanel.active === true) {
-			await chatInterface.joinChannel(channel_id);
+			joinResult = await chatInterface.joinChannel(channel_id);
 		} else {
 			await dbRequest.removeChannel(channel_id);
 		}
@@ -151,7 +151,9 @@ async function join() {
 	}
 
 	await new Promise(resolve => setTimeout(resolve, delayMs));
-	joinQueue.items.dequeue();
+	if(joinResult === 1 || joinResult === -1) {
+		joinQueue.items.dequeue();
+	}
 	joinQueue.isBusy = false;
 	join();
 }
