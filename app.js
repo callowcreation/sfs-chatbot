@@ -51,9 +51,11 @@ if (module === require.main) {
 		if (verifyAuthorization(req)) {
 			twitchRequest.getUserExtensions(OWNER_ID).then(json => {
 				res.status(200).json(json);
-			}).catch(e => console.error(e));
+			}).catch(e => {
+				res.status(401).json({ reason: e });
+			});
 		} else {
-			res.status(404).end();
+			res.status(401).json({ reason: 'Unauthorized' });
 		}
 	});
 
@@ -149,10 +151,10 @@ async function join() {
 	}
 
 	await new Promise(resolve => setTimeout(resolve, delayMs));
-	if(joinResult === -1) {
+	if (joinResult === -1) {
 		await dbRequest.removeChannel(channel_id);
 	}
-	if(joinResult === 1 || joinResult === -1) {
+	if (joinResult === 1 || joinResult === -1) {
 		joinQueue.items.dequeue();
 	}
 	joinQueue.isBusy = false;
