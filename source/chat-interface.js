@@ -92,7 +92,7 @@ async function onMessage(channel, user, message, self) {
 		try {
 
 			const isAllowed = await twitchRequest.isAllowedUser(user['room-id'], user['user-id']);
-			console.log('isAllowed ' + term);
+			console.log('isAllowed ' + isAllowed);
 
 			if (!isAllowed) return;
 
