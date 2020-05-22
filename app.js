@@ -52,7 +52,7 @@ if (module === require.main) {
 			twitchRequest.getUserExtensions(OWNER_ID).then(json => {
 				res.status(200).json(json);
 			}).catch(e => {
-				res.status(401).json({ reason: e });
+				res.status(500).json({ reason: e });
 			});
 		} else {
 			res.status(401).json({ reason: 'Unauthorized' });
@@ -123,6 +123,8 @@ function verifyAuthorization(req) {
 	return req.headers['authorization'] === 'Basic ' + (Buffer.from(process.env.EXT_CLIENT_ID + ':' + process.env.EXT_CLIENT_SECRET).toString('base64'));
 }
 
+const userExtensions = {};
+
 async function join() {
 	if (joinQueue.items.size() === 0) return;
 	if (joinQueue.isBusy === true) return;
@@ -130,13 +132,16 @@ async function join() {
 
 	const channel_id = joinQueue.items.peek();
 
-	const response = await twitchRequest.getUserExtensions(channel_id);
+	if (!Object.keys(userExtensions).includes(channel_id)) {
+		const response = await twitchRequest.getUserExtensions(channel_id);
+		userExtensions[channel_id] = response;
+	}
 
 	let activePanel = null;
 	let joinResult = 0;
-	if (response.data) {
-		for (const panelId in response.data.panel) {
-			const panel = response.data.panel[panelId];
+	if (userExtensions[channel_id].data) {
+		for (const panelId in userExtensions[channel_id].data.panel) {
+			const panel = userExtensions[channel_id].data.panel[panelId];
 			if (panel.name === 'Shoutouts for Streamers') {
 				activePanel = panel;
 			}
@@ -147,7 +152,7 @@ async function join() {
 		}
 
 	} else {
-		console.error(response);
+		console.error(userExtensions[channel_id]);
 	}
 
 	await new Promise(resolve => setTimeout(resolve, delayMs));
