@@ -17,7 +17,7 @@ let multiplier = 2.0;
 let currentFailedMS = WAIT_ON_FAILED_JOIN_MS;
 
 const client = new tmi.client({
-	options: { debug: true },
+	//options: { debug: true },
 	connection: {
 		reconnect: true,
 		secure: true
