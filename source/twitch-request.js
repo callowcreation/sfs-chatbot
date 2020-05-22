@@ -57,8 +57,11 @@ async function getModerators(broadcaster_id, user_id) {
 	User by user_id is not banned and is a moderator of the channel by broadcaster_id
 */
 async function isAllowedUser(broadcaster_id, user_id) {
-	return isAllowed(broadcaster_id, user_id, getBanned, r => r.data && r.data.length === 0 || r.data)
-		.then(allowed => allowed && isAllowed(broadcaster_id, user_id, getModerators, r => r.data !== null));
+	const results = await Promise.all([
+		isAllowed(broadcaster_id, user_id, getBanned, r => r.data && r.data.length === 0 || r.data),
+		isAllowed(broadcaster_id, user_id, getModerators, r => r.data !== null)
+	]);
+	return results.every(Boolean);
 }
 
 async function isAllowed(broadcaster_id, user_id, func, allowed) {
