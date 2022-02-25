@@ -43,12 +43,12 @@ async function joinChannelById(channel_id) {
 		return -1;
 	}
 	try {
-		const user = await twitchRequest.getUserById(channel_id);
-		const joined = await client.join(user.name);
+		const { data: [user] } = await twitchRequest.getUserById(channel_id);
+		const joined = await client.join(user.login);
 		console.log(`Join ${retriesCounter} of ${MAX_RETRIES} retries for channel ${channel_id} ${user.display_name} ${joined[0]}`);
 		return 1;
 	} catch (error) {
-		console.log(`FAILED ${currentFailedMS/1000}s Join channel ${channel_id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
+		console.log(`FAILED ${currentFailedMS / 1000}s Join channel ${channel_id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
 		console.error(error);
 
 		await new Promise(resolve => setTimeout(resolve, WAIT_ON_FAILED_JOIN_MS));
@@ -60,8 +60,8 @@ async function joinChannelById(channel_id) {
 
 async function partChannelById(channel_id) {
 	try {
-		const user = await twitchRequest.getUserById(channel_id);
-		const parted = await client.part(user.name);
+		const { data: [user] } = await twitchRequest.getUserById(channel_id);
+		const parted = await client.part(user.login);
 		console.log(`Part channel ${channel_id} ${user.display_name} ${parted[0]}`);
 	} catch (error) {
 		console.log(`FAILED Part channel ${channel_id}`);

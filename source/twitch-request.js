@@ -36,13 +36,7 @@ async function getUserByName(username) {
 }
 
 async function getUserById(user_id) {
-	return fetch(`${KRAKEN_API_BASE_PATH}/users/${user_id}`, {
-		method: 'GET',
-		headers: {
-			'Accept': 'application/vnd.twitchtv.v5+json',
-			'Client-ID': process.env.CLIENT_ID,
-		}
-	}).then(result => result.json());
+	return twitchOAuth.getEndpoint(`${HELIX_API_BASE_PATH}/users?id=${user_id}`);
 }
 
 async function getBanned(broadcaster_id, user_id) {
