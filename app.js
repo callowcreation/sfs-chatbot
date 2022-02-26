@@ -4,7 +4,6 @@ require('dotenv').config();
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const qs = require('querystring');
 
 const { Queue } = require('./queue');
 const chatInterface = require('./source/chat-interface');
@@ -66,9 +65,8 @@ if (module === require.main) {
 	});
 
 	app.get('/auth-callback', async (req, res) => {
-		const req_data = qs.parse(req.url.split('?')[1]);
-		const code = req_data['code'];
-		const state = req_data['state'];
+		const code = req.query['code'];
+		const state = req.query['state'];
 
 		try {
 			const auth = await twitchRequest.authorize(code, state);
