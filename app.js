@@ -72,10 +72,6 @@ if (module === require.main) {
 			const auth = await twitchRequest.authorize(code, state);
 			if (auth.success === true) {
 
-				res.redirect('/home');
-
-				console.log('authenticated');
-
 				let ids = [];
 
 				if (process.env.IS_DEV_ENV) {
@@ -85,6 +81,10 @@ if (module === require.main) {
 					const json = await dbRequest.getChannels().then(r => r.json());
 					ids = json.ids;
 				}
+
+				res.redirect('/home');
+
+				console.log('authenticated');
 
 				for (let i = 0; i < ids.length; i++) {
 					joinQueue.items.enqueue(ids[i]);
