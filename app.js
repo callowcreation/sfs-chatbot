@@ -71,6 +71,9 @@ if (module === require.main) {
 		try {
 			const auth = await twitchRequest.authorize(code, state);
 			if (auth.success === true) {
+
+				res.redirect('/home');
+
 				console.log('authenticated');
 
 				let ids = [];
@@ -89,7 +92,6 @@ if (module === require.main) {
 				}
 				join();
 
-				res.redirect('/home');
 			} else {
 				res.redirect('/failed');
 			}
