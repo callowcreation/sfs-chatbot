@@ -43,7 +43,12 @@ async function joinChannelById(channel_id) {
 		return -1;
 	}
 	try {
-		const { data: [user] } = await twitchRequest.getUserById(channel_id);
+		const result = await twitchRequest.getUserById(channel_id);
+		if(result.data.length === 0) {
+			console.log(`Channel lookup ${channel_id} failed join attempt skipped.`);
+			return -3;
+		}
+		const user = result.data[0];
 		const joined = await client.join(user.login);
 		console.log(`Join ${retriesCounter} of ${MAX_RETRIES} retries for channel ${channel_id} ${user.display_name} ${joined[0]}`);
 		return 1;
@@ -88,7 +93,7 @@ async function onMessage(channel, user, message, self) {
 		const username = getUsername(term, msg);
 
 		try {
-			
+
 			if (shoutouts[channel] &&
 				(shoutouts[channel].username === username &&
 					shoutouts[channel].timestamp > Date.now())) return;
