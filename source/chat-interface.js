@@ -44,7 +44,7 @@ async function joinChannelById(channel_id) {
 	}
 	try {
 		const result = await twitchRequest.getUserById(channel_id);
-		if(result.data.length === 0) {
+		if(!result.data || result.data.length === 0) {
 			console.log(`Channel lookup ${channel_id} failed join attempt skipped.`);
 			return -3;
 		}
