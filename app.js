@@ -11,7 +11,7 @@ const dbRequest = require('./source/db-request');
 const twitchRequest = require('./source/twitch-request');
 
 const OWNER_ID = '75987197';
-const CHANNEL_ID = OWNER_ID ;//'101223367' // <--- 101223367 is woLLac;
+const CHANNEL_ID = OWNER_ID;//'101223367' // <--- 101223367 is woLLac;
 
 const delayMs = 150;
 const joinQueue = {
@@ -69,24 +69,21 @@ if (module === require.main) {
 		const state = req.query['state'];
 
 		try {
-			const auth = await twitchRequest.authorize(code, state);
-			if (auth.success === true) {
+			await twitchRequest.authorize(code, state);
 
-				console.log('authenticated');
+			console.log('authenticated');
 
-				const json = await dbRequest.getChannels().then(r => r.json());
-				const ids = json.ids;
+			const json = await dbRequest.getChannels().then(r => r.json());
+			const ids = json.ids;
 
-				for (let i = 0; i < ids.length; i++) {
-					joinQueue.items.enqueue(ids[i]);
-					if (i === 0) join();
-				}
-				join();
-
-				res.redirect('/home');
-			} else {
-				res.redirect('/failed');
+			for (let i = 0; i < ids.length; i++) {
+				joinQueue.items.enqueue(ids[i]);
+				if (i === 0) join();
 			}
+			join();
+
+			res.redirect('/home');
+
 		} catch (error) {
 			console.error(error);
 			res.redirect('/failed');

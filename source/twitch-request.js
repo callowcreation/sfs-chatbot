@@ -21,10 +21,8 @@ const twitchOAuth = new TwitchOAuth({
 }, state);
 
 async function authorize(code, state) {
-	if (twitchOAuth.confirmState(state)) {
-		return twitchOAuth.fetchToken(code);
-	}
-	return { success: false };
+	twitchOAuth.confirmState(state);
+	return twitchOAuth.fetchToken(code);
 }
 
 async function getUserExtensions(user_id) {
