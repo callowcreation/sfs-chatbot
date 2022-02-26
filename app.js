@@ -72,19 +72,10 @@ if (module === require.main) {
 			const auth = await twitchRequest.authorize(code, state);
 			if (auth.success === true) {
 
-				let ids = [];
-
-				if (process.env.IS_DEV_ENV) {
-					ids.length = 1;
-					ids.fill(CHANNEL_ID);
-				} else {
-					const json = await dbRequest.getChannels().then(r => r.json());
-					ids = json.ids;
-				}
-
-				res.redirect('/home');
-
 				console.log('authenticated');
+
+				const json = await dbRequest.getChannels().then(r => r.json());
+				const ids = json.ids;
 
 				for (let i = 0; i < ids.length; i++) {
 					joinQueue.items.enqueue(ids[i]);
@@ -92,6 +83,7 @@ if (module === require.main) {
 				}
 				join();
 
+				res.redirect('/home');
 			} else {
 				res.redirect('/failed');
 			}
