@@ -13,7 +13,7 @@ const headers = {
 
 function url(endpoint) {
 	const path = `${baseUrl}/${endpoint}`;
-	console.log(`ENV_PATH_ENDPOINT------> ${path}`);
+	//console.log(`ENV_PATH_ENDPOINT------> ${path}`);
 	return path;
 }
 

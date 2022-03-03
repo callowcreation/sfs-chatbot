@@ -131,8 +131,8 @@ async function onMessage(channel, user, message, self) {
 				console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
 			}
 
-		} catch (error) {
-			console.log(error);
+		} catch (err) {
+			console.error(err);
 		}
 	}
 }
