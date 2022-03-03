@@ -87,8 +87,8 @@ if (module === require.main) {
 
 			const json = await dbRequest.getChannels().then(r => r.json());
 			const ids = json.ids;
-			ids.length = 10;
-			/*const validate = await twitchRequest.validateToken();
+			/*ids.length = 10;
+			const validate = await twitchRequest.validateToken();
 			console.log(validate);*/
 			for (let i = 0; i < ids.length; i++) {
 				joinQueue.items.enqueue(ids[i]);
