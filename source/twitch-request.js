@@ -4,8 +4,8 @@ const fetch = require('node-fetch');
 const crypto = require('crypto');
 const TwitchOAuth = require('@callowcreation/basic-twitch-oauth');
 
-const KRAKEN_API_BASE_PATH = 'https://api.twitch.tv/kraken';
 const HELIX_API_BASE_PATH = 'https://api.twitch.tv/helix';
+const VALIDATE_API_PATH = 'https://id.twitch.tv/oauth2/validate';
 
 const buffer = crypto.randomBytes(16);
 const state = buffer.toString('hex');
@@ -25,8 +25,17 @@ async function authorize(code, state) {
 	return twitchOAuth.fetchToken(code);
 }
 
+async function validateToken() {
+	return twitchOAuth.getEndpoint(VALIDATE_API_PATH)
+}
+
 async function getUserExtensions(user_id) {
 	return twitchOAuth.getEndpoint(`${HELIX_API_BASE_PATH}/users/extensions?user_id=${user_id}`);
+}
+
+async function getUsers(users) {
+	const users_params = users.join('&');
+	return twitchOAuth.getEndpoint(`${HELIX_API_BASE_PATH}/users?${users_params}`);
 }
 
 async function getUserByName(username) {
@@ -63,8 +72,10 @@ async function isAllowed(broadcaster_id, user_id, func, allowed) {
 module.exports = {
 	authorizeUrl: twitchOAuth.authorizeUrl,
 	authorize,
+	validateToken,
 	getUserById,
 	getUserExtensions,
 	getUserByName,
+	getUsers,
 	isAllowedUser
 };

@@ -42,24 +42,31 @@ async function joinChannelById(channel_id) {
 		currentFailedMS = WAIT_ON_FAILED_JOIN_MS;
 		return -1;
 	}
+	let result = null;
 	try {
-		const result = await twitchRequest.getUserById(channel_id);
+		result = await twitchRequest.getUserById(channel_id);
 		if(!result.data || result.data.length === 0) {
 			console.log(`Channel lookup ${channel_id} failed join attempt skipped.`);
-			return -3;
+			return -1;
 		}
 		const user = result.data[0];
 		const joined = await client.join(user.login);
 		console.log(`Join ${retriesCounter} of ${MAX_RETRIES} retries for channel ${channel_id} ${user.display_name} ${joined[0]}`);
+		retriesCounter = 0;
 		return 1;
 	} catch (error) {
-		console.log(`FAILED ${currentFailedMS / 1000}s Join channel ${channel_id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
+		const username = result && result.data && result.data.length > 0 ? result.data[0].login : 'NO USER FOUND'
+		console.log(`FAILED ${currentFailedMS / 1000}s Join channel ${username} ${channel_id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
 		console.error(error);
-
-		await new Promise(resolve => setTimeout(resolve, WAIT_ON_FAILED_JOIN_MS));
-		++retriesCounter;
-		currentFailedMS += currentFailedMS * multiplier;
-		return -2;
+		if (error === 'msg_banned' || error === 'msg_channel_suspended') {
+			return -1;
+		} else if(error === 'No response from Twitch.') {
+			await new Promise(resolve => setTimeout(resolve, WAIT_ON_FAILED_JOIN_MS));
+			++retriesCounter;
+			currentFailedMS += currentFailedMS * multiplier;
+			return -2;
+		}
+		return -1;
 	}
 }
 
