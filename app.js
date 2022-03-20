@@ -53,8 +53,7 @@ if (module === require.main) {
 		twitchRequest.getUsers(users)
 			.then(json => {
 				res.status(200).json(json);
-			})
-			.catch(e => {
+			}).catch(e => {
 				console.error(e);
 				res.status(500).send(JSON.stringify(e));
 			});
@@ -65,7 +64,8 @@ if (module === require.main) {
 			twitchRequest.getUserExtensions(OWNER_ID).then(json => {
 				res.status(200).json(json);
 			}).catch(e => {
-				res.status(500).json({ reason: e });
+				console.error(e);
+				res.status(500).send(JSON.stringify(e));
 			});
 		} else {
 			res.status(401).json({ reason: 'Unauthorized' });
