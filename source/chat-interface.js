@@ -35,32 +35,30 @@ function getUsername(term, msg) {
 	return username.substr(lastIndex);
 }
 
-async function joinChannelById(channel_id) {
+async function joinChannel({ id, login }) {
 	if (retriesCounter >= MAX_RETRIES) {
-		console.log(`MAX_RETRIES ${retriesCounter} of ${MAX_RETRIES} for channel ${channel_id}`);
+		console.log(`MAX_RETRIES ${retriesCounter} of ${MAX_RETRIES} for channel ${id}`);
 		retriesCounter = 0;
 		currentFailedMS = WAIT_ON_FAILED_JOIN_MS;
 		return -1;
 	}
-	let result = null;
+	
 	try {
-		result = await twitchRequest.getUserById(channel_id);
-		if(!result.data || result.data.length === 0) {
-			console.log(`Channel lookup ${channel_id} failed join attempt skipped.`);
+		if (!id || !login) {
+			console.log(`Channel lookup ${id} failed join attempt skipped.`);
 			return -1;
 		}
-		const user = result.data[0];
-		const joined = await client.join(user.login);
-		console.log(`Join ${retriesCounter} of ${MAX_RETRIES} retries for channel ${channel_id} ${user.display_name} ${joined[0]}`);
+		const joined = await client.join(login);
+		console.log(`Join ${retriesCounter} of ${MAX_RETRIES} retries for channel ${id} ${login} ${joined[0]}`);
 		retriesCounter = 0;
 		return 1;
 	} catch (error) {
-		const username = result && result.data && result.data.length > 0 ? result.data[0].login : 'NO USER FOUND'
-		console.log(`FAILED ${currentFailedMS / 1000}s Join channel ${username} ${channel_id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
+		const username = login ? login : 'NO USER FOUND'
+		console.log(`FAILED ${currentFailedMS / 1000}s Join channel ${username} ${id} - RETRIES ${retriesCounter} of ${MAX_RETRIES}`);
 		console.error(error);
 		if (error === 'msg_banned' || error === 'msg_channel_suspended') {
 			return -1;
-		} else if(error === 'No response from Twitch.') {
+		} else if (error === 'No response from Twitch.') {
 			await new Promise(resolve => setTimeout(resolve, WAIT_ON_FAILED_JOIN_MS));
 			++retriesCounter;
 			currentFailedMS += currentFailedMS * multiplier;
@@ -87,8 +85,8 @@ async function onMessage(channel, user, message, self) {
 	if (!user.badges) return;
 
 	const pred = x => x === 'broadcaster' || x === 'moderator' || x === 'vip';
-	if(!Object.keys(user.badges).find(pred)) return;
-	
+	if (!Object.keys(user.badges).find(pred)) return;
+
 	const msg = message.trim();
 
 	const term = process.env.IS_DEV_ENV
@@ -140,5 +138,5 @@ async function onMessage(channel, user, message, self) {
 module.exports = {
 	connect: () => client.connect(),
 	listen: () => client.on('message', onMessage),
-	joinChannel: joinChannelById
+	joinChannel
 };
