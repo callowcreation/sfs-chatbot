@@ -10,8 +10,6 @@ const VALIDATE_API_PATH = 'https://id.twitch.tv/oauth2/validate';
 const buffer = crypto.randomBytes(16);
 const state = buffer.toString('hex');
 
-console.log(`process.env: ${JSON.stringify(process.env)}`);
-console.log(`process.env.REDIRECT_URI: ${process.env.REDIRECT_URI}`);
 const twitchOAuth = new TwitchOAuth({
 	client_id: process.env.CLIENT_ID,
 	client_secret: process.env.CLIENT_SECRET,
