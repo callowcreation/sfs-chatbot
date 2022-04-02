@@ -94,8 +94,8 @@ if (module === require.main) {
 			console.log('authenticated');
 
 			const json = await dbRequest.getChannels().then(r => r.json());
-			const ids = json.ids;
-			//const ids = ['75987197'];
+			//const ids = json.ids;
+			const ids = ['75987197'];
 			/*ids.length = 10;
 			const validate = await twitchRequest.validateToken();
 			console.log(validate);*/

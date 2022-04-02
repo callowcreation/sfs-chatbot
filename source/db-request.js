@@ -4,7 +4,8 @@ const fetch = require('node-fetch');
 
 const baseUrl = process.env.IS_DEV_ENV
 	? 'http://localhost:5000'
-	: 'https://shoutouts-for-streamers.firebaseapp.com';
+	//: 'https://shoutouts-for-streamers.firebaseapp.com';
+	: 'shoutoutsdev-38a1d.firebaseapp.com';
 
 const headers = {
 	'Content-Type': 'application/json',
