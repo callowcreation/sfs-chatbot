@@ -42,7 +42,7 @@ async function joinChannel({ id, login }) {
 		currentFailedMS = WAIT_ON_FAILED_JOIN_MS;
 		return -1;
 	}
-	
+
 	try {
 		if (!id || !login) {
 			console.log(`Channel lookup ${id} failed join attempt skipped.`);
@@ -89,9 +89,10 @@ async function onMessage(channel, user, message, self) {
 
 	const msg = message.trim();
 
-	const term = process.env.IS_DEV_ENV
+	const term = '!sotest '; // use while deploying hosted test
+	/*const term = process.env.IS_DEV_ENV
 		? '!sotest '
-		: '!so ';
+		: '!so ';*/
 
 	if (msg.indexOf(term) === 0) {
 
