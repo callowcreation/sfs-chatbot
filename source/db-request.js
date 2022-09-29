@@ -38,6 +38,6 @@ module.exports = {
 	post: postFirebaseRequest,
 	getChannels: () => getFirebaseRequest('channels/ids'),
 	postSettings: (channelId) => postFirebaseRequest('channels/settings', { channelId }),
-	addShoutout: (channelId, { username, posted_by }) => postFirebaseRequest('channels/shoutouts/add', { channelId, username, posted_by }),
+	addShoutout: (channelId, { username, posted_by, is_auto }) => postFirebaseRequest('channels/shoutouts/add', { channelId, username, posted_by, is_auto }),
 	removeChannel: (channelId) => postFirebaseRequest('channels/remove', { channelId })
 };

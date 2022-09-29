@@ -79,6 +79,44 @@ async function partChannelById(channel_id) {
 	}
 }
 
+async function sendShoutout(username, channel, channel_id, posted_by, is_auto) {
+	try {
+		
+		if (shoutouts[channel] &&
+			(shoutouts[channel].username === username &&
+				shoutouts[channel].timestamp > Date.now())) return;
+
+		shoutouts[channel] = { username, timestamp: Date.now() + SPAM_USER_SHOUTOUT_TIME_MS };
+
+		const twitchUsers = await twitchRequest.getUserByName(username);
+		if (twitchUsers.data.length === 0) return;
+
+		const { data } = await twitchRequest.getUserExtensions(channel_id);
+		if (!data) return;
+
+		let activePanel = null;
+
+		for (const panelId in data.panel) {
+			const panel = data.panel[panelId];
+			if (panel.name === 'Shoutouts for Streamers') {
+				activePanel = panel;
+			}
+		}
+
+		if (activePanel && activePanel.active === true) {
+			const result_add = await dbRequest.addShoutout(channel_id, { username, posted_by, is_auto });
+			console.log(`${channel} ${channel_id} : Add ${username} : Status ${result_add.status}`);
+		} else {
+			const result_remove = await dbRequest.removeChannel(channel_id);
+			await partChannelById(channel_id);
+			console.log(`${channel} ${channel_id} : Not Active : Status ${result_remove.status}`);
+		}
+
+	} catch (err) {
+		console.error(err);
+	}
+}
+
 async function onMessage(channel, user, message, self) {
 
 	if (self) return;
@@ -97,47 +135,30 @@ async function onMessage(channel, user, message, self) {
 	if (msg.indexOf(term) === 0) {
 
 		const username = getUsername(term, msg);
+		const channelId = user['room-id'];
+		const posted_by = user.username;
 
-		try {
-
-			if (shoutouts[channel] &&
-				(shoutouts[channel].username === username &&
-					shoutouts[channel].timestamp > Date.now())) return;
-
-			shoutouts[channel] = { username, timestamp: Date.now() + SPAM_USER_SHOUTOUT_TIME_MS };
-
-			const twitchUsers = await twitchRequest.getUserByName(username);
-			if (twitchUsers.data.length === 0) return;
-
-			const { data } = await twitchRequest.getUserExtensions(user['room-id']);
-			if (!data) return;
-
-			let activePanel = null;
-
-			for (const panelId in data.panel) {
-				const panel = data.panel[panelId];
-				if (panel.name === 'Shoutouts for Streamers') {
-					activePanel = panel;
-				}
-			}
-
-			if (activePanel && activePanel.active === true) {
-				const result_add = await dbRequest.addShoutout(user['room-id'], { username, posted_by: user.username });
-				console.log(`${channel} ${user['room-id']} : Add ${username} : Status ${result_add.status}`);
-			} else {
-				const result_remove = await dbRequest.removeChannel(user['room-id']);
-				await partChannelById(user['room-id']);
-				console.log(`${channel} ${user['room-id']} : Not Active : Status ${result_remove.status}`);
-			}
-
-		} catch (err) {
-			console.error(err);
-		}
+		await sendShoutout(username, channel, channelId, posted_by, false);
 	}
+}
+
+async function onRaided(channel, username, viewers) {
+
+	const cleanedChannel = channel.substring(1);
+	const twitchUsers = await twitchRequest.getUserByName(cleanedChannel);
+	if (twitchUsers.data.length === 0) return;
+
+	const channelId = twitchUsers.data[0].id;
+	const posted_by = 'SfS';
+
+	await sendShoutout(username.toLowerCase(), channel, channelId, posted_by, true);
 }
 
 module.exports = {
 	connect: () => client.connect(),
-	listen: () => client.on('message', onMessage),
+	listen: () => {
+		client.on('message', onMessage);
+		client.on("raided", onRaided);
+	},
 	joinChannel
 };

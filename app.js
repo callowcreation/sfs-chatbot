@@ -110,7 +110,6 @@ if (module === require.main) {
 
 			console.log(users);
 
-
 			for (let i = 0; i < users.length; i++) {
 				joinQueue.items.enqueue(users[i]);
 				if (i === 0) join();
