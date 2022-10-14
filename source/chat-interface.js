@@ -1,7 +1,7 @@
 "use strict";
 
 const tmi = require('tmi.js');
-const dbRequest = require('./db-request');
+const dbRequest = require('./channels-db-request');
 const twitchRequest = require('./twitch-request');
 
 const shoutouts = {};
