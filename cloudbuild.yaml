@@ -1,0 +1,15 @@
+steps:
+# This build step clones a remote public repository from Github; no
+# credentials are required.
+- name: 'gcr.io/cloud-builders/git'
+  args: ['clone', 'https://github.com/callowcreation/sfs-chatbot']
+# This step uses Application Default Credentials to clone a Cloud Source
+# Repository.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
+  entrypoint: 'git'
+  args: ['clone', 'https://source.developers.google.com/p/$PROJECT_ID/r/$REPO']
+# This step is functionally equivalent to the prior step, but invokes `gcloud`
+# instead of using `git` directly.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args: ['source', 'repos', 'clone', '$REPO']
