@@ -1,33 +1,27 @@
- steps:
- - name: node
-   entrypoint: npm
-   args: ['install']
- - name: node
-   entrypoint: npm
-   args: ['run', 'start'] 
- - name: 'gcr.io/kaniko-project/executor:latest'
-   args:
-   - --destination=gcr.io/$PROJECT_ID/sfs-chatbot-dev:$COMMIT_SHA
-   - --cache=true
-   - --cache-ttl=48h
- # Build the container image
- # - name: 'gcr.io/cloud-builders/docker'
- #   args: ['build', '-t', 'gcr.io/$PROJECT_ID/scheduler:$COMMIT_SHA', '.']
- # Push the container image to Container Registry
- # - name: 'gcr.io/cloud-builders/docker'
- #   args: ['push', 'gcr.io/$PROJECT_ID/scheduler:$COMMIT_SHA']
- # Deploy container image to Cloud Run
- - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-   entrypoint: gcloud
-   args:
-   - 'run'
-   - 'deploy'
-   - 'scheduler'
-   - '--image'
-   - 'gcr.io/$PROJECT_ID/sfs-chatbot-dev:$COMMIT_SHA'
-   - '--region'
-   - 'us-central1'
-   #- '--set-secrets=PROJECT_ID=project-id:latest,COMPONENT_PORT=component-port:latest,JWT_SECRET=jwt-secret:latest,JWT_EXPIRY=jwt-expiry:latest,HOSTNAME=hostname:latest,DF_HOSTNAME=df-hostname:latest,MAX_START_DATE_OFFSET=date_offset:latest,MAX_SLOT_DATE_OFFSET=slot_date_offset:latest,SMS_API_CLIENT_ID=SMS_API_CLIENT_ID:latest,SMS_API_CLIENT_SECRET=SMS_API_CLIENT_SECRET:latest,SMS_API_GENERATE_TOKEN_URL=SMS_API_GENERATE_TOEKN_URL:latest,SMS_API_URL=sms_url:latest,SMS_API_CLIENT_PHONE_NUMBER=SMS_API_CLIENT_PHONE_NUMBER:latest,CURRENT_API_GENERATE_TOKEN_URL=current_generate_token_url:latest,CURRENT_CASE_API_ENDPOINT_URL=current_case_endpoint_url:latest,CURRENT_CLIENT_ID=current_client_id:latest,CURRENT_CLIENT_SECRET=current_client_secret:latest,CURRENT_SCOPE_VALUE=current_scope_value:latest'
-   - '--allow-unauthenticated'
- # images:
- # - 'gcr.io/$PROJECT_ID/scheduler:$COMMIT_SHA'
+steps:
+  - name: node
+    entrypoint: npm
+    args:
+      - install
+  - name: node
+    entrypoint: npm
+    args:
+      - install
+      - run
+      - start
+  - name: 'gcr.io/kaniko-project/executor:latest'
+    args:
+      - '--destination=gcr.io/$PROJECT_ID/sfs-chatbot-dev:$COMMIT_SHA'
+      - '--cache=true'
+      - '--cache-ttl=48h'
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - sfs-chatbot-dev
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/sfs-chatbot-dev:$COMMIT_SHA'
+      - '--region'
+      - us-central1
+      - '--allow-unauthenticated'
