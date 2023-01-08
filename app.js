@@ -10,6 +10,7 @@ const chatInterface = require('./source/chat-interface');
 const { verifyJwt, signJwt, writeJwt, readJwt } = require('./source/tokens-db-request');
 const { getChannels, removeChannel } = require('./source/channels-db-request');
 const twitchRequest = require('./source/twitch-request');
+const environment = require('./environment');
 
 const OWNER_ID = '75987197';
 const CHANNEL_ID = OWNER_ID;//'101223367' // <--- 101223367 is woLLac;
@@ -115,13 +116,13 @@ if (module === require.main) {
         }
     });
 
-    if (process.env.IS_DEV_ENV) {
+    if (environment.isDevEnv()) {
         console.log('Playground with caution DEV ENV');
     } else {
         console.log('No Joke PROD CAUTION ENV');
     }
 
-    const server = app.listen(process.env.PORT || 7000, async () => {
+    const server = app.listen(environment.port() || 7000, async () => {
         const port = server.address().port;
         console.log(`App listening on port ${port}`);
 

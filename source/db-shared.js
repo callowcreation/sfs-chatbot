@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
+const environment = require('../environment');
 
-const baseUrl = process.env.IS_DEV_ENV
+const baseUrl = environment.isDevEnv()
 ? 'http://localhost:5000'
 //: 'https://shoutouts-for-streamers.firebaseapp.com';
 : 'https://shoutoutsdev-38a1d.firebaseapp.com';

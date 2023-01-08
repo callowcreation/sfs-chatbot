@@ -128,7 +128,7 @@ async function onMessage(channel, user, message, self) {
 	const msg = message.trim();
 
 	const term = '!sotest '; // use while deploying hosted test
-	/*const term = process.env.IS_DEV_ENV
+	/*const term = environment.isDevEnv()
 		? '!sotest '
 		: '!so ';*/
 
