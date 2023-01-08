@@ -86,7 +86,8 @@ if (module === require.main) {
     });
 
     app.get('/authorize', async (req, res) => {
-        if (autoAuthorized()) {
+        const authorized = await autoAuthorized();
+        if (authorized) {
             res.redirect('/home');
         } else {
             res.redirect(twitchRequest.authorizeUrl);
