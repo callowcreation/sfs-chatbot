@@ -1,10 +1,15 @@
 const fetch = require('node-fetch');
 const environment = require('../environment');
 
-const baseUrl = environment.isDevEnv()
-? 'http://localhost:5000'
-//: 'https://shoutouts-for-streamers.firebaseapp.com';
-: 'https://shoutoutsdev-38a1d.firebaseapp.com';
+const iStaged = true;
+const production = { staged: 0, live: 1 };
+
+const URLS = {
+    dev: 'http://localhost:5000',
+    prod: ['https://shoutoutsdev-38a1d.firebaseapp.com', 'https://shoutouts-for-streamers.firebaseapp.com']
+};
+
+const baseUrl = environment.isDevEnv() ? URLS.dev : (iStaged ? URLS.prod[production.staged] : URLS.prod[production.live]);
 
 const headers = {
     'Content-Type': 'application/json',
