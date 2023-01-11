@@ -7,7 +7,6 @@ const bodyParser = require('body-parser');
 
 const { Queue } = require('./queue');
 const chatInterface = require('./source/chat-interface');
-const { verifyJwt, signJwt, writeJwt, readJwt } = require('./source/tokens-db-request');
 const { getChannels, removeChannel } = require('./source/channels-db-request');
 const twitchRequest = require('./source/twitch-request');
 const environment = require('./environment');
@@ -20,25 +19,27 @@ const joinQueue = {
     items: new Queue(),
     isBusy: false
 };
+const userExtensions = {};
 
 const app = express();
 app.use(bodyParser.json());
 
 if (module === require.main) {
-    chatInterface.connect();
-    chatInterface.listen();
+
+    twitchRequest.twitchOAuth.token()
+        .then(async () => {
+            chatInterface.connect();
+            chatInterface.listen();
+            await getAndJoinChannels();
+        });
 
     app.get('/', (req, res) => {
-        res.status(200).send(`<a href="/authorize">Authorize</a>`);
+        res.status(200).send(`<a href="/health">Health Check</a>`);
     });
 
-    app.get('/test', (req, res) => {
+    app.get('/health', (req, res) => {
         twitchRequest.getUserExtensions(CHANNEL_ID).then(json => res.status(200).json(json))
             .catch(e => console.error(e));
-    });
-
-    app.get('/home', async (req, res) => {
-        res.status(200).send(`<a href="/test">Test</a>`);
     });
 
     app.post('/join', async (req, res) => {
@@ -71,9 +72,6 @@ if (module === require.main) {
 
     app.post('/ping', async (req, res) => {
         if (verifyAuthorization(req)) {
-            const validate = await twitchRequest.validateToken();
-            console.log({ validate });
-
             twitchRequest.getUserExtensions(OWNER_ID).then(json => {
                 res.status(200).json(json);
             }).catch(e => {
@@ -82,38 +80,6 @@ if (module === require.main) {
             });
         } else {
             res.status(401).json({ reason: 'Unauthorized' });
-        }
-    });
-
-    app.get('/authorize', async (req, res) => {
-        const authorized = await autoAuthorized();
-        if (authorized) {
-            res.redirect('/home');
-        } else {
-            res.redirect(twitchRequest.authorizeUrl);
-        }
-    });
-
-    app.get('/auth-callback', async (req, res) => {
-        const code = req.query['code'];
-        const state = req.query['state'];
-
-        try {
-            await twitchRequest.authorize(code, state);
-
-            const payload = twitchRequest.getAuthenticated();
-            const jwt_token = signJwt(payload);
-            await writeJwt({ jwt_token });
-
-            console.log('authenticated');
-
-            await getAndJoinChannels();
-
-            res.redirect('/home');
-            
-        } catch (error) {
-            console.error(error);
-            res.redirect('/failed');
         }
     });
 
@@ -127,25 +93,8 @@ if (module === require.main) {
         const port = server.address().port;
         console.log(`App listening on port ${port}`);
 
-        await autoAuthorized();
+        // await autoAuthorized();
     });
-}
-
-async function autoAuthorized() {
-    try {
-        const { jwt_token } = await readJwt();
-        const payload = verifyJwt(jwt_token);
-        const isValidated = await twitchRequest.validate(payload.access_token);
-
-        if (isValidated) {
-            twitchRequest.setAuthenticated(payload);
-            await getAndJoinChannels();
-            return true;
-        }
-    } catch (error) {
-        console.error(error);
-    }
-    return false;
 }
 
 async function getAndJoinChannels() {
@@ -153,14 +102,7 @@ async function getAndJoinChannels() {
     //const ids = json.ids;
     const ids = ['75987197'];
     /*ids.length = 10;*/
-    /*const validate = await twitchRequest.validateToken();
-    console.log({ validate });
-    
-    const revoke = await twitchRequest.revokeToken();
-    console.log({ revoke });
 
-    const validateAgain = await twitchRequest.validateToken();
-    console.log({ validateAgain });*/
     const requester = async (chunk) => {
         return twitchRequest.getUsers(chunk.map(x => `id=${x}`));
     };
@@ -201,8 +143,6 @@ async function chunkRequests(stack, requester, mapper) {
 function verifyAuthorization(req) {
     return req.headers['authorization'] === 'Basic ' + (Buffer.from(process.env.EXT_CLIENT_ID + ':' + process.env.EXT_CLIENT_SECRET).toString('base64'));
 }
-
-const userExtensions = {};
 
 async function join() {
     if (joinQueue.items.size() === 0) return;
