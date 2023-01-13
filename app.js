@@ -6,9 +6,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const { Queue } = require('./queue');
-const chatInterface = require('./source/chat-interface');
-const { getChannels, removeChannel } = require('./source/channels-db-request');
-const twitchRequest = require('./source/twitch-request');
+const chatInterface = require('./src/chat-interface');
+const { getChannels, removeChannel } = require('./src/channels-db-request');
+const twitchRequest = require('./src/twitch-request');
 const environment = require('./environment');
 
 const OWNER_ID = '75987197';
