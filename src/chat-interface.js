@@ -127,14 +127,15 @@ async function onMessage(channel, user, message, self) {
 
 	const msg = message.trim();
 
-	const term = '!sotest '; // use while deploying hosted test
-	/*const term = environment.isDevEnv()
-		? '!sotest '
-		: '!so ';*/
-
-	if (msg.indexOf(term) === 0) {
-
-		const username = getUsername(term, msg);
+    const behaviour = await dbRequest.getBehaviours(user['room-id']).then(r => r.json());
+    const command = msg.split(' ')[0].substring(1);
+    
+    behaviour.commands.push('sotest');
+	if (Object.keys(user.badges).includes('vip') && !behaviour['badge-vip']) return;
+    
+	if (behaviour.commands.includes(command)) {
+        // const term = '!sotest '; // use while deploying hosted test
+		const username = getUsername(`!${command} `, msg);
 		const channelId = user['room-id'];
 		const posted_by = user.username;
 
