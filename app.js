@@ -17,9 +17,11 @@ const CHANNEL_ID = OWNER_ID;//'101223367' // <--- 101223367 is woLLac;
 const delayMs = 150;
 const joinQueue = {
     items: new Queue(),
-    isBusy: false
+    isBusy: false,
+    initialized: false
 };
 const userExtensions = {};
+const joined = [];
 
 const app = express();
 app.use(bodyParser.json());
@@ -30,7 +32,7 @@ if (module === require.main) {
         .then(async () => {
             chatInterface.connect();
             chatInterface.listen();
-            await getAndJoinChannels();
+            await initialJoinChannels();
         });
 
     app.get('/', (req, res) => {
@@ -45,9 +47,12 @@ if (module === require.main) {
     app.post('/join', async (req, res) => {
         if (verifyAuthorization(req)) {
             try {
-                const { data: [user] } = await twitchRequest.getUserById(req.body.channelId);
-                await chatInterface.joinChannel(user);
-                res.json({ message: `Joining channel: ${user.login} ${user.id}` });
+                if (joinQueue.initialized) {   
+                    await joinChannelsById([req.body.channelId]);
+                } else {
+                    await initialJoinChannels();
+                }
+                res.json({ message: `Joining channel: ${req.body.channelId} ${user.id}` });
             } catch (err) {
                 const message = `Joining channel: ${req.body.channelId} FAILED`;
                 console.log(message);
@@ -97,19 +102,17 @@ if (module === require.main) {
     });
 }
 
-async function getAndJoinChannels() {
-    const json = await getChannels().then(r => r.json());
-    //const ids = json.ids;
-    const ids = ['75987197'];
-    /*ids.length = 10;*/
 
-    const requester = async (chunk) => {
-        return twitchRequest.getUsers(chunk.map(x => `id=${x}`));
-    };
+async function twitchUsers(ids) {
+
+    const requester = async (chunk) => twitchRequest.getUsers(chunk.map(x => `id=${x}`));
     const mapper = x => ({ id: x.id, login: x.login });
 
-    const users = await chunkRequests(ids, requester, mapper);
+    return chunkRequests(ids, requester, mapper);
+}
 
+async function joinChannelsById(ids) {
+    const users = await twitchUsers(ids);
     console.log(users);
 
     for (let i = 0; i < users.length; i++) {
@@ -118,6 +121,14 @@ async function getAndJoinChannels() {
             join();
     }
     join();
+}
+
+async function initialJoinChannels() {
+    const json = await getChannels().then(r => r.json());
+    //const ids = json.ids;
+    const ids = ['75987197'];
+    /*ids.length = 10;*/
+    await joinChannelsById(ids);
 }
 
 async function chunkRequests(stack, requester, mapper) {
@@ -148,6 +159,7 @@ async function join() {
     if (joinQueue.items.size() === 0) return;
     if (joinQueue.isBusy === true) return;
     joinQueue.isBusy = true;
+    joinQueue.initialized = true;
 
     const { id, login } = joinQueue.items.peek();
 
@@ -183,6 +195,7 @@ async function join() {
     }
     if (joinResult === 1 || joinResult === -1) {
         joinQueue.items.dequeue();
+        joined.push({ login, result: joinResult });
     }
     joinQueue.isBusy = false;
     join();
