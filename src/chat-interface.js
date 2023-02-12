@@ -1,6 +1,7 @@
 "use strict";
 
 const tmi = require('tmi.js');
+const environment = require('../environment');
 const dbRequest = require('./channels-db-request');
 const twitchRequest = require('./twitch-request');
 
@@ -127,10 +128,11 @@ async function onMessage(channel, user, message, self) {
 
 	const msg = message.trim();
 
-    const behaviour = await dbRequest.getBehaviours(user['room-id']).then(r => r.json());
     const command = msg.split(' ')[0].substring(1);
+    const behaviour = await dbRequest.getBehaviours(user['room-id']).then(r => r.json());
     
-    behaviour.commands.push('sotest');
+    if(environment.isDevEnv()) behaviour.commands = ['sotest'];
+
 	if (Object.keys(user.badges).includes('vip') && !behaviour['badge-vip']) return;
     
 	if (behaviour.commands.includes(command)) {
