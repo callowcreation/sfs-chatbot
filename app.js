@@ -44,15 +44,25 @@ if (module === require.main) {
             .catch(e => console.error(e));
     });
 
+    app.get('/user/name/:name', (req, res) => {
+        twitchRequest.getUserByName(req.params.name).then(json => res.status(200).json(json))
+            .catch(e => console.error(e));
+    });
+
+    app.get('/user/id/:id', (req, res) => {
+        twitchRequest.getUserById(req.params.id).then(json => res.status(200).json(json))
+            .catch(e => console.error(e));
+    });
+
     app.post('/join', async (req, res) => {
         if (verifyAuthorization(req)) {
             try {
-                if (joinQueue.initialized) {   
+                if (joinQueue.initialized) {
                     await joinChannelsById([req.body.channelId]);
                 } else {
                     await initialJoinChannels();
                 }
-                res.json({ message: `Joining channel: ${req.body.channelId} ${user.id}` });
+                res.json({ message: `Joining channel: ${req.body.channelId}` });
             } catch (err) {
                 const message = `Joining channel: ${req.body.channelId} FAILED`;
                 console.log(message);
