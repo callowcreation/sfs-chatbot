@@ -80,7 +80,7 @@ async function partChannelById(channel_id) {
     }
 }
 
-async function sendShoutout(username, channel, channel_id, posted_by, is_auto) {
+async function sendShoutout(username, channel, channel_id, posted_by, is_auto, streamer_id, poster_id) {
     try {
 
         if (shoutouts[channel] &&
@@ -105,7 +105,7 @@ async function sendShoutout(username, channel, channel_id, posted_by, is_auto) {
         }
 
         if (activePanel && activePanel.active === true) {
-            const result_add = await dbRequest.addShoutout(channel_id, { username, posted_by, is_auto });
+            const result_add = await dbRequest.addShoutout(channel_id, { username, posted_by, is_auto, streamer_id, poster_id });
             console.log(`${channel} ${channel_id} : Add ${username} : Status ${result_add.status}`);
         } else {
             const result_remove = await dbRequest.removeChannel(channel_id);
@@ -143,20 +143,28 @@ async function onMessage(channel, user, message, self) {
         const channelId = user['room-id'];
         const posted_by = user.username;
 
-        await sendShoutout(username, channel, channelId, posted_by, false);
+        const twitchUsers = await twitchRequest.getUserByName(username);
+        if(twitchUsers.data.length === 0) return;
+        const streamer_id = twitchUsers.data[0].id;
+        const poster_id = user['user-id'];
+
+        await sendShoutout(username, channel, channelId, posted_by, false, streamer_id, poster_id);
     }
 }
 
 async function onRaided(channel, username, viewers) {
 
     const cleanedChannel = channel.substring(1);
-    const twitchUsers = await twitchRequest.getUserByName(cleanedChannel);
-    if (twitchUsers.data.length === 0) return;
+    const twitchUsers = await twitchRequest.getUsers([cleanedChannel, username, process.env.BOT_USERNAME]);
+    if (twitchUsers.data.length !== 3) return;
 
-    const channelId = twitchUsers.data[0].id;
+    const channelId = twitchUsers.find(x => x.login === cleanedChannel.toLowerCase()).id;
     const posted_by = 'SfS';
 
-    await sendShoutout(username.toLowerCase(), channel, channelId, posted_by, true);
+    const streamer_id = twitchUsers.find(x => x.login === username.toLowerCase());
+    const poster_id = twitchUsers.find(x => x.login === process.env.BOT_USERNAME.toLowerCase());
+
+    await sendShoutout(username.toLowerCase(), channel, channelId, posted_by, true, streamer_id, poster_id);
 }
 
 module.exports = {
