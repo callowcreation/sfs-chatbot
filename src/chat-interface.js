@@ -127,6 +127,7 @@ async function onMessage(channel, user, message, self) {
     if (!Object.keys(user.badges).find(pred)) return;
 
     const msg = message.trim();
+    if(!msg.startsWith('!') || msg.length < 4) return;
 
     const command = msg.split(' ')[0].substring(1);
     const behaviour = await dbRequest.getBehaviours(user['room-id']).then(r => r.json());
