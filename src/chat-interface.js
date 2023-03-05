@@ -105,8 +105,8 @@ async function sendShoutout(username, channel, channel_id, posted_by, is_auto, s
         }
 
         if (activePanel && activePanel.active === true) {
-            const result_add = await dbRequest.addShoutout(channel_id, { username, posted_by, is_auto, streamer_id, poster_id });
-            console.log(`${channel} ${channel_id} : Add ${username} : Status ${result_add.status}`);
+            const result_update = await dbRequest.updateShoutout(channel_id, { is_auto, streamer_id, poster_id });
+            console.log(`${channel} ${channel_id} : Add ${username} : Status ${JSON.stringify(result_update)}`);
         } else {
             const result_remove = await dbRequest.removeChannel(channel_id);
             await partChannelById(channel_id);
@@ -127,7 +127,7 @@ async function onMessage(channel, user, message, self) {
     if (!Object.keys(user.badges).find(pred)) return;
 
     const msg = message.trim();
-    if(!msg.startsWith('!') || msg.length < 4) return;
+    if (!msg.startsWith('!') || msg.length < 4) return;
 
     const command = msg.split(' ')[0].substring(1);
     const behaviour = await dbRequest.getBehaviours(user['room-id']).then(r => r.json());
@@ -145,7 +145,7 @@ async function onMessage(channel, user, message, self) {
         const posted_by = user.username;
 
         const twitchUsers = await twitchRequest.getUserByName(username);
-        if(twitchUsers.data.length === 0) return;
+        if (twitchUsers.data.length === 0) return;
         const streamer_id = twitchUsers.data[0].id;
         const poster_id = user['user-id'];
 

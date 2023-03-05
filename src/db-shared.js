@@ -5,7 +5,7 @@ const iStaged = true;
 const production = { staged: 0, live: 1 };
 
 const URLS = {
-    dev: 'http://localhost:5000',
+    dev: 'http://127.0.0.1:5001/shoutoutsdev-38a1d/us-central1/app',
     prod: ['https://shoutoutsdev-38a1d.firebaseapp.com', 'https://shoutouts-for-streamers.firebaseapp.com']
 };
 
@@ -37,7 +37,16 @@ async function postRequest(path, data) {
     });
 }
 
+async function putRequest(path, data) {
+    return fetch(makeUrl(path), {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(data)
+    });
+}
+
 module.exports = {
     getRequest,
-    postRequest
+    postRequest,
+    putRequest
 };
