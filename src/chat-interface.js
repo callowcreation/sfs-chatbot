@@ -129,28 +129,34 @@ async function onMessage(channel, user, message, self) {
     const msg = message.trim();
     if (!msg.startsWith('!') || msg.length < 4) return;
 
-    const command = msg.split(' ')[0].substring(1);
-    const behaviour = await dbRequest.getBehaviours(user['room-id']).then(r => r.json());
-
-    if (Object.keys(user.badges).includes('vip') && !behaviour['badge-vip']) return;
-
-    // use while deploying hosted test
-    // DO NOT change condition order
-    if (environment.isDevEnv()) behaviour.commands = ['sodev'];
-    else if (environment.isTestEnv()) behaviour.commands = ['sotest'];
-
-    if (behaviour.commands.includes(command)) {
-        const username = getUsername(`!${command} `, msg);
-        const channelId = user['room-id'];
-        const posted_by = user.username;
-
-        const twitchUsers = await twitchRequest.getUserByName(username);
-        if (twitchUsers.data.length === 0) return;
-        const streamer_id = twitchUsers.data[0].id;
-        const poster_id = user['user-id'];
-
-        await sendShoutout(username, channel, channelId, posted_by, false, streamer_id, poster_id);
+    try {
+        const command = msg.split(' ')[0].substring(1);
+        const behaviour = await dbRequest.getBehaviours(user['room-id']).then(r => r.json())
+        
+    
+        if (Object.keys(user.badges).includes('vip') && !behaviour['badge-vip']) return;
+    
+        // use while deploying hosted test
+        // DO NOT change condition order
+        if (environment.isDevEnv()) behaviour.commands = ['sodev'];
+        else if (environment.isTestEnv()) behaviour.commands = ['sotest'];
+    
+        if (behaviour.commands.includes(command)) {
+            const username = getUsername(`!${command} `, msg);
+            const channelId = user['room-id'];
+            const posted_by = user.username;
+    
+            const twitchUsers = await twitchRequest.getUserByName(username);
+            if (twitchUsers.data.length === 0) return;
+            const streamer_id = twitchUsers.data[0].id;
+            const poster_id = user['user-id'];
+    
+            await sendShoutout(username, channel, channelId, posted_by, false, streamer_id, poster_id);
+        }
+    } catch (err) {
+        console.error(err);
     }
+
 }
 
 async function onRaided(channel, username, viewers) {

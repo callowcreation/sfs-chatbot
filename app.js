@@ -70,7 +70,7 @@ if (module === require.main) {
                 res.status(500).json({ message });
             }
         } else {
-            res.status(404).end();
+            res.status(401).end();
         }
     });
 
@@ -134,11 +134,15 @@ async function joinChannelsById(ids) {
 }
 
 async function initialJoinChannels() {
-    const json = await getChannels().then(r => r.json());
-    //const ids = json.ids;
-    const ids = ['75987197'];
-    /*ids.length = 10;*/
-    await joinChannelsById(ids);
+    try {
+        const json = await getChannels().then(r => r.json());
+        //const ids = json.ids;
+        const ids = ['75987197'];
+        /*ids.length = 10;*/
+        await joinChannelsById(ids);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 async function chunkRequests(stack, requester, mapper) {
