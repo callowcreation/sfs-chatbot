@@ -45,8 +45,17 @@ async function putRequest(path, data) {
     });
 }
 
+async function patchRequest(path, data) {
+    return fetch(makeUrl(path), {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify(data)
+    });
+}
+
 module.exports = {
     getRequest,
     postRequest,
-    putRequest
+    putRequest,
+    patchRequest
 };
